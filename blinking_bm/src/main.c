@@ -102,27 +102,11 @@ int main(void)
 	int led;
    /* perform the needed initialization here */
    GPIO_Init();
-   Led_Color_Init(LED_1);
-   Led_Color_Init(LED_2);
-   Led_Color_Init(LED_3);
-   Teclado_Init();
+   Led_Color_Init();
    //volatile int g;
    led = LED_1;
 
    while(1) {
-	  int tecla;
-	  tecla = key();
-	  switch(tecla) {
-	  	  case TECLA_1:
-	  		  led = LED_1;
-	  		  break;
-	  	  case TECLA_2:
-	  		  led = LED_2;
-	  		  break;
-	  	  case TECLA_3:
-	  		  led = LED_3;
-	  		  break;
-	  }
 	  int i=0;
 	  for(i=0;i<500000;i++) {
 	     asm("nop");

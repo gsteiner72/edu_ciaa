@@ -95,7 +95,7 @@
  * \remarks This function never returns. Return value is only to avoid compiler
  *          warnings or errors.
  */
-int direccion;
+int secuencia[]={LED_R,LED_1,LED_2,LED_3};
 int main(void)
 {
    /* perform the needed initialization here */
@@ -104,43 +104,21 @@ int main(void)
    Teclado_Init();
    Timer_Init();
    Timer_Set(250);
-   int color,j;
-   color = 0;
-   j = 0;
-
    while(1) {
-	   int r,g,b,i;
-	   r=(color & 0xFF);
-	   g=(color<<8 & 0xFF);
-	   b=(color<<16 & 0xFF);
-	   for(i=0;i<255;i++) {
-		   if(r>i)  Led_Color_Hight(LED_R);
-		   else     Led_Color_Low(LED_R);
-		   if(g>i)  Led_Color_Hight(LED_G);
-		   else     Led_Color_Low(LED_G);
-		   if(b>i)  Led_Color_Hight(LED_B);
-		   else     Led_Color_Low(LED_B);
-	   }
- 	   j++;
- 	   if(j>50) {
- 	   	  j=0;
- 	   	  color++;
- 	   	  color = color % 0xFFFFFF;
-   	   }
    }
    return 0;
 }
 
 void Timer_IRQ(void) {
-	static int led = LED_1;
+	static int led = 0;
 	static int direccion = 1;
 	if(key()==TECLA_1) direccion = 1;
 	if(key()==TECLA_2) direccion = -1;
-	Led_Color_Low(led);
+	Led_Color_Low(secuencia[led]);
 	led+=direccion;
-	if(led>LED_3) led=LED_1;
-	if(led<LED_1) led=LED_3;
-	Led_Color_Hight(led);
+	if(led>3) led=0;
+	if(led<0) led=3;
+	Led_Color_Hight(secuencia[led]);
 	Timer_Clear_IRQ();
 }
 

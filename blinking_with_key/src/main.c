@@ -102,26 +102,35 @@ int main(void)
 	int led;
    /* perform the needed initialization here */
    GPIO_Init();
-   Led_Color_Init(LED_1);
-   Led_Color_Init(LED_2);
-   Led_Color_Init(LED_3);
-
+   Led_Color_Init();
+   Teclado_Init();
    //volatile int g;
    led = LED_1;
 
    while(1) {
+	   static int old_led=-1;
 	  int tecla;
 	  tecla = key();
 	  switch(tecla) {
-	  	  case TECLA_1:
+	      case TECLA_1:
+	    	  led = LED_R;
+	    	  break;
+	  	  case TECLA_2:
 	  		  led = LED_1;
 	  		  break;
-	  	  case TECLA_2:
+	  	  case TECLA_3:
 	  		  led = LED_2;
 	  		  break;
-	  	  case TECLA_3:
+	  	  case TECLA_4:
 	  		  led = LED_3;
 	  		  break;
+	  }
+	  if(led!=old_led) {
+		  old_led = led;
+		  Led_Color_Low(LED_R);
+		  Led_Color_Low(LED_1);
+		  Led_Color_Low(LED_2);
+		  Led_Color_Low(LED_3);
 	  }
 	  int i=0;
 	  for(i=0;i<500000;i++) {
