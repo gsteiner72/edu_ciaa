@@ -31,9 +31,9 @@
  *
  */
 
-/** \brief Blinking Bare Metal example source file
+/** \brief Blinking Bare Metal driver led
  **
- ** This is a mini example of the CIAA Firmware.
+ **
  **
  **/
 
@@ -42,7 +42,7 @@
 
 /** \addtogroup Examples CIAA Firmware Examples
  ** @{ */
-/** \addtogroup Baremetal Bare Metal example source file
+/** \addtogroup Baremetal Bare Metal LED Driver
  ** @{ */
 
 /*
@@ -58,11 +58,6 @@
  */
 
 /*==================[inclusions]=============================================*/
-#include "main.h"       /* <= own header */
-#include "led.h"
-#include "teclado.h"
-#include "timer.h"
-#include "adc.h"
 
 #ifndef CPU
 #error CPU shall be defined
@@ -72,7 +67,26 @@
 #elif (mk60fx512vlq15 == CPU)
 #else
 #endif
-
+#include "uart.h"
+void UART_Init() {
+	Chip_SCU_PinMux(7,1,0,FUNC6); /* P2 3: UART3 TXD */
+	Chip_SCU_PinMux(7,2,0,FUNC6); /* P2 4: UART3 RXD */
+	Chip_UART_Init(LPC_USART2);
+	Chip_UART_SetBaud(LPC_USART2,9600);
+	Chip_UART_SetupFIFOS(LPC_USART2,UART_FCR_FIFO_EN | UART_FCR_TRG_LEV0);
+	Chip_UART_TXEnable(LPC_USART2);
+}
+unsigned char UART_Read() {
+	unsigned char data;
+	if((Chip_UART_ReadLineStatus(LPC_USART2) & 1<<0)==1)
+		data = Chip_UART_ReadByte(LPC_USART2);
+	else
+		data = 0;
+}
+void UART_Send(char dato) {
+	while((Chip_UART_ReadLineStatus(LPC_USART2) & 1<<5)==0);
+	Chip_UART_SendByte(LPC_USART2,dato );
+}
 
 /*==================[macros and definitions]=================================*/
 
@@ -96,51 +110,7 @@
  * \remarks This function never returns. Return value is only to avoid compiler
  *          warnings or errors.
  */
-int direccion;
-int maxvalue = 1000;
-int minvalue = 50;
-int main(void)
-{
-   /* perform the needed initialization here */
-	GPIO_Init();
-	Led_Color_Init();
-	Teclado_Init();
-	ADC_Init();
-	ADC_Interrup();
-	Timer_Init();
-	Timer_Set(100);
-	int tecla;
-	int old_tecla=0;
-	while(1) {
-		tecla = key();
-		if(tecla!=old_tecla) {
-			switch(tecla) {
-				case TECLA_1: maxvalue+=10; break;
-				case TECLA_2: maxvalue-=10; break;
-				case TECLA_3: minvalue+=10; break;
-				case TECLA_4: minvalue-=10; break;
-			}
-			old_tecla=tecla;
-		}
 
-   }
-   return 0;
-}
-
-void Timer_IRQ(void) {
-	ADC_Start();
-	Led_Color_Toggle(LED_1);
-	Timer_Clear_IRQ();
-}
-
-void ADC0_IRQ(void) {
-	int value;
-	   value = ADC_GetValue();
-	   if(value>maxvalue) Led_Color_Hight(LED_2);
-	   else           	  Led_Color_Low(LED_2);
-	   if(value<minvalue) Led_Color_Hight(LED_3);
-	   else 		  	  Led_Color_Low(LED_3);
-}
 
 
 

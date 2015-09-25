@@ -63,6 +63,8 @@
 #include "teclado.h"
 #include "timer.h"
 #include "adc.h"
+#include "dac.h"
+#include "uart.h"
 
 #ifndef CPU
 #error CPU shall be defined
@@ -96,9 +98,14 @@
  * \remarks This function never returns. Return value is only to avoid compiler
  *          warnings or errors.
  */
-int direccion;
-int maxvalue = 1000;
-int minvalue = 50;
+unsigned char cad1[]="Aumento la ganancia\r\n";
+unsigned char cad2[]="Disminuyo la ganancia\r\n";
+unsigned char cad3[]="MUTE\r\n";
+unsigned char cad4[]="Valor ADC:0000\r\n";
+
+
+int factor;
+int valuetosend;
 int main(void)
 {
    /* perform the needed initialization here */
@@ -107,24 +114,66 @@ int main(void)
 	Teclado_Init();
 	ADC_Init();
 	ADC_Interrup();
+	DAC_Init();
 	Timer_Init();
 	Timer_Set(100);
-	int tecla;
-	int old_tecla=0;
+	UART_Init();
+
+	int tecla,old_tecla;
+	old_tecla=0;
+	int value;
 	while(1) {
 		tecla = key();
 		if(tecla!=old_tecla) {
 			switch(tecla) {
-				case TECLA_1: maxvalue+=10; break;
-				case TECLA_2: maxvalue-=10; break;
-				case TECLA_3: minvalue+=10; break;
-				case TECLA_4: minvalue-=10; break;
+				case TECLA_1:
+					factor++;
+					if(factor>20) factor=20;
+					EnviarCadena(cad1);
+					break;
+				case TECLA_2:
+					factor--;
+					if(factor<1) factor=1;
+					EnviarCadena(cad2);
+					break;
+				case TECLA_3:
+					factor=0;
+					EnviarCadena(cad3);
+					break;
+				case TECLA_4:
+					EnviarADC();
+					break;
+
 			}
 			old_tecla=tecla;
 		}
+	    value = valuetosend * factor;
+	    value /= 10;
+	    if(value>1023) value = 1023;
+		DAC_Value(value);
 
-   }
+
+    }
    return 0;
+}
+void EnviarCadena(unsigned char *cadena) {
+	int caracter=0;
+	while(cadena[caracter]!=0) {
+		UART_Send(cadena[caracter++]);
+	}
+}
+void EnviarADC() {
+	int i,valor;
+	valor = valuetosend;
+	for(i=0;i<4;i++) {
+		if(valor==0) {
+			cad4[13-i] = '0';
+		} else {
+			cad4[13-i] = '0' + valor % 10;
+			valor = valor /10;
+		}
+	}
+	EnviarCadena(cad4);
 }
 
 void Timer_IRQ(void) {
@@ -135,11 +184,8 @@ void Timer_IRQ(void) {
 
 void ADC0_IRQ(void) {
 	int value;
-	   value = ADC_GetValue();
-	   if(value>maxvalue) Led_Color_Hight(LED_2);
-	   else           	  Led_Color_Low(LED_2);
-	   if(value<minvalue) Led_Color_Hight(LED_3);
-	   else 		  	  Led_Color_Low(LED_3);
+    value = ADC_GetValue();
+    valuetosend = value;
 }
 
 

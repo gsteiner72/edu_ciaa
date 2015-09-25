@@ -63,6 +63,7 @@
 #include "teclado.h"
 #include "timer.h"
 #include "adc.h"
+#include "uart.h"
 
 #ifndef CPU
 #error CPU shall be defined
@@ -96,9 +97,7 @@
  * \remarks This function never returns. Return value is only to avoid compiler
  *          warnings or errors.
  */
-int direccion;
-int maxvalue = 1000;
-int minvalue = 50;
+unsigned char cadena[]="Hola Mundo\r\n\0";
 int main(void)
 {
    /* perform the needed initialization here */
@@ -106,40 +105,44 @@ int main(void)
 	Led_Color_Init();
 	Teclado_Init();
 	ADC_Init();
-	ADC_Interrup();
-	Timer_Init();
-	Timer_Set(100);
-	int tecla;
-	int old_tecla=0;
+//	ADC_Interrup();
+//	Timer_Init();
+//	Timer_Set(10);
+	UART_Init();
+	int tecla,old_tecla;
+	old_tecla=0;
 	while(1) {
+		if(UART_Read()=='a') {
+			Led_Color_Toggle(LED_1);
+			EnviarCadena();
+		}
 		tecla = key();
 		if(tecla!=old_tecla) {
 			switch(tecla) {
-				case TECLA_1: maxvalue+=10; break;
-				case TECLA_2: maxvalue-=10; break;
-				case TECLA_3: minvalue+=10; break;
-				case TECLA_4: minvalue-=10; break;
+				case TECLA_1:
+					Led_Color_Toggle(LED_1);
+					EnviarCadena();
+					break;
 			}
 			old_tecla=tecla;
 		}
 
-   }
+    }
    return 0;
+}
+void EnviarCadena() {
+	int caracter=0;
+	while(cadena[caracter]!=0) {
+		UART_Send(cadena[caracter++]);
+	}
 }
 
 void Timer_IRQ(void) {
-	ADC_Start();
-	Led_Color_Toggle(LED_1);
 	Timer_Clear_IRQ();
 }
 
 void ADC0_IRQ(void) {
-	int value;
-	   value = ADC_GetValue();
-	   if(value>maxvalue) Led_Color_Hight(LED_2);
-	   else           	  Led_Color_Low(LED_2);
-	   if(value<minvalue) Led_Color_Hight(LED_3);
-	   else 		  	  Led_Color_Low(LED_3);
+
 }
 
 
