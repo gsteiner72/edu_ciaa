@@ -87,6 +87,18 @@ void UART_Send(char dato) {
 	while((Chip_UART_ReadLineStatus(LPC_USART2) & 1<<5)==0);
 	Chip_UART_SendByte(LPC_USART2,dato );
 }
+// ------------------------------------------------------------------------
+// Funcion UART_Send_String
+// envia una cadena de terminación nula por la UART
+// ------------------------------------------------------------------------
+
+void UART_Send_String(unsigned char *cadena) {
+	int caracter=0;
+	while(cadena[caracter]!=0) {
+		UART_Send(cadena[caracter++]);
+	}
+}
+
 
 /*==================[macros and definitions]=================================*/
 

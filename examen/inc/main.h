@@ -95,7 +95,6 @@ extern void _vStackTop(void);
 
 void Timer_IRQ(void);
 void ADC0_IRQ(void);
-void EnviarCadena(unsigned char *cadena);
 void RIT_IRQHandler(void);
 void EnviarADC();
 

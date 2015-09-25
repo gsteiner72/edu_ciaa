@@ -105,66 +105,72 @@ unsigned char cad4[]="Valor ADC:0000\r\n";
 
 
 int factor;
-int valuetosend;
+int adc_value;
 int main(void)
 {
    /* perform the needed initialization here */
-	GPIO_Init();
-	Led_Color_Init();
-	Teclado_Init();
-	ADC_Init();
-	ADC_Interrup();
-	DAC_Init();
-	Timer_Init();
-	Timer_Set(100);
+	GPIO_Init();         // activa el periferico GPIO
+	ADC_Init();          // Inicializa ADC
+	DAC_Init();          // Inicializa DAC
+	Led_Color_Init();    // Inicializa los pines correspondiente a los led como GPIO y como salida
+	Teclado_Init();   	 // Inicializa los pines correspondiente al teclado como GPIO y como entrada
+	Timer_Init();        // Inicializa el TIMER
 	UART_Init();
+	ADC_Interrup();      // configura la interrupción del ADC
+	Timer_Set(100);      // configura el Timer para generar interrupciones cada n ms
 
 	int tecla,old_tecla;
 	old_tecla=0;
 	int value;
+	int count = 0;
 	while(1) {
 		tecla = key();
 		if(tecla!=old_tecla) {
 			switch(tecla) {
-				case TECLA_1:
+				case TECLA_1:    //incrementar amplitud
 					factor++;
 					if(factor>20) factor=20;
-					EnviarCadena(cad1);
+					UART_Send_String(cad1);
 					break;
-				case TECLA_2:
+				case TECLA_2:    //decrementar amplitud
 					factor--;
 					if(factor<1) factor=1;
-					EnviarCadena(cad2);
+					UART_Send_String(cad2);
 					break;
-				case TECLA_3:
+				case TECLA_3:    //MUTE
 					factor=0;
-					EnviarCadena(cad3);
+					UART_Send_String(cad3);
 					break;
-				case TECLA_4:
+				case TECLA_4:    //enviar cuenta por ADC
 					EnviarADC();
 					break;
 
 			}
 			old_tecla=tecla;
 		}
-	    value = valuetosend * factor;
-	    value /= 10;
-	    if(value>1023) value = 1023;
-		DAC_Value(value);
+		// pwm del led
+		if(count>adc_value) {
+			Led_Color_Low(LED_2);
+		} else {
+			Led_Color_Hight(LED_2);
+		}
+		count++;
+		if(count>900) count=0;
+		// fin pwm
+
+
 
 
     }
    return 0;
 }
-void EnviarCadena(unsigned char *cadena) {
-	int caracter=0;
-	while(cadena[caracter]!=0) {
-		UART_Send(cadena[caracter++]);
-	}
-}
+// ------------------------------------------------------------------------
+// Funcion EnviarADC
+// toma la variable global adc_value la transforma a ascii y la envia por UART
+// ------------------------------------------------------------------------
 void EnviarADC() {
 	int i,valor;
-	valor = valuetosend;
+	valor = adc_value;
 	for(i=0;i<4;i++) {
 		if(valor==0) {
 			cad4[13-i] = '0';
@@ -173,19 +179,29 @@ void EnviarADC() {
 			valor = valor /10;
 		}
 	}
-	EnviarCadena(cad4);
+	UART_Send_String(cad4);
 }
-
+// ------------------------------------------------------------------------
+// Interrupción del Timer
+// comienza conversión del ADC
+// ------------------------------------------------------------------------
 void Timer_IRQ(void) {
 	ADC_Start();
 	Led_Color_Toggle(LED_1);
 	Timer_Clear_IRQ();
 }
-
+// ------------------------------------------------------------------------
+// Interrupción del ADC
+// lee la conversión del ADC, lo pasa a la variable global adc_value
+// y actualiza el DAC con el valor leido afectado por un factor
+// ------------------------------------------------------------------------
 void ADC0_IRQ(void) {
 	int value;
-    value = ADC_GetValue();
-    valuetosend = value;
+    adc_value = ADC_GetValue();
+    value = adc_value * factor;
+    value /= 10;
+    if(value>1023) value = 1024;
+	DAC_Value(value);
 }
 
 

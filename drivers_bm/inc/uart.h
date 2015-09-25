@@ -70,6 +70,7 @@
 void UART_Init();
 unsigned char UART_Read();
 void UART_Send(char dato);
+void UART_Send_String(unsigned char *cadena);
 
 /*==================[external functions declaration]=========================*/
 
